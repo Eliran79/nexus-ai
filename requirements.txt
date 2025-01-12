@@ -1,0 +1,5 @@
+# requirements.txt
+anthropic>=0.3.0
+prompt_toolkit>=3.0.0
+pygments>=2.15.0
+python-dotenv
