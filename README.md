@@ -248,7 +248,7 @@ MIT License
 
 ## Documents
 
-- [LLM API Cost Optimization Through Strategic Session Management](docs/llm_api_cost_optimization.md)
+- [LLM API Cost Optimization Through Orchestrator-Based Task Distribution](docs/llm_api_cost_optimization.md)
 
 ## Contributing
 
