@@ -246,6 +246,10 @@ To contribute:
 
 MIT License
 
+## Documents
+
+- [LLM API Cost Optimization Through Strategic Session Management](docs/llm_api_cost_optimization.md)
+
 ## Contributing
 
 Contributions to NEXUS are welcomed! Here's how you can help:
