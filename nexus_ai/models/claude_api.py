@@ -1,16 +1,95 @@
-# nexus-ai/nexus_ai/claude/client.py
 import anthropic
-from typing import List, Dict
+from anthropic import BadRequestError
+from typing import Optional
+
+from .base import ModelInterface, ModelType, ExecutionMode, ModelUnavailableError, ModelExecutionError
 
 
-class ClaudeClient:
+class ClaudeAPI(ModelInterface):
+    """Claude API implementation using Anthropic's API"""
+    
     def __init__(self, api_key: str):
+        super().__init__(ModelType.CLAUDE, ExecutionMode.API)
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY not set")
         self.client = anthropic.Client(api_key=api_key)
-
-    def get_response(self, message: str, context: str = "") -> str:
-        system_prompt = """You are Claude, part of NEXUS (Neural EXecution and Understanding System) v0.3.0, a multi-model AI environment. You are currently running in API mode (legacy client).
+        self._system_prompt = self._get_system_prompt()
+    
+    def is_available(self) -> bool:
+        """Check if API key is available"""
+        return self.client is not None
+    
+    async def get_response(self, message: str, context: str = "") -> str:
+        """Get response from Claude API
+        
+        Args:
+            message: User message/query
+            context: Additional context from session history
+            
+        Returns:
+            Claude's response as string
+            
+        Raises:
+            ModelUnavailableError: If API key not available
+            ModelExecutionError: If API call fails
+        """
+        return self.get_response_sync(message, context)
+    
+    def get_response_sync(self, message: str, context: str = "") -> str:
+        """Get response from Claude API (synchronous)
+        
+        Args:
+            message: User message/query
+            context: Additional context from session history
+            
+        Returns:
+            Claude's response as string
+        """
+        if not self.is_available():
+            raise ModelUnavailableError("Claude API client not available")
+        
+        full_message = self._prepare_message(message, context)
+        
+        try:
+            response = self.client.messages.create(
+                model="claude-3-5-sonnet-20241022",  # Latest Sonnet model
+                max_tokens=4096,  # Increased for better responses
+                messages=[{"role": "user", "content": full_message}],
+            )
+            return response.content[0].text
+            
+        except BadRequestError as e:
+            if "credit balance is too low" in str(e):
+                raise ModelExecutionError("Your Anthropic API credit balance is too low. Please visit https://console.anthropic.com to manage your billing.")
+            else:
+                raise ModelExecutionError(f"Bad request to Claude API: {str(e)}")
+        except Exception as e:
+            raise ModelExecutionError(f"Error calling Claude API: {str(e)}")
+    
+    def _prepare_message(self, message: str, context: str = "") -> str:
+        """Prepare the full message with context for Claude API
+        
+        Args:
+            message: User message
+            context: Session context
+            
+        Returns:
+            Formatted message string
+        """
+        full_message = f"""
+        System: {self._system_prompt}
+        
+        Current Context:
+        {context}
+        
+        User Message:
+        {message}
+        """
+        return full_message
+    
+    def _get_system_prompt(self) -> str:
+        """Get the system prompt for Claude"""
+        return """You are Claude, part of NEXUS (Neural EXecution and Understanding System) v0.3.0, a multi-model AI environment. You are currently running in API mode as a fallback or user preference.
 
 IMPORTANT: NEXUS now supports multiple AI models:
 - Local Claude execution (claude -p): Direct system command execution, no API costs
@@ -95,25 +174,3 @@ You are running in an interactive environment with the following capabilities:
     
     The current context (command history, outputs, and environment state) will be provided with each message. You should actively use this information to provide relevant and contextual responses. Be helpful about the multi-model capabilities when relevant.
     """
-
-        full_message = f"""
-        System: {system_prompt}
-        
-        Current Context:
-        {context}
-        
-        User Message:
-        {message}
-        """
-
-        response = self.client.messages.create(
-            model="claude-3-5-sonnet-20241022",  # Latest Sonnet model
-            max_tokens=4096,  # Increased for better responses
-            messages=[{"role": "user", "content": full_message}],
-        )
-        return response.content[0].text
-
-    async def fetch_history(self, days_back: int = 7) -> List[Dict]:
-        """Fetch conversation history"""
-        # Implementation depends on specific Anthropic API capabilities
-        pass

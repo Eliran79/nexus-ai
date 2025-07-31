@@ -9,14 +9,22 @@
 ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 ```
 
-NEXUS AI is an interactive environment that combines Python REPL, Bash execution, and Claude AI assistance with **full interactive command support**. It provides a seamless interface for coding, system operations, and AI-guided development.
+NEXUS AI is an interactive environment that combines Python REPL, Bash execution, and **multi-model AI assistance** with **full interactive command support**. It provides a seamless interface for coding, system operations, and AI-guided development with **local Claude execution by default** to avoid API costs.
 
-## 🚀 What's New (v0.2.0)
+## 🚀 What's New (v0.3.0)
+
+### 🤖 **NEW: Multi-Model Local Execution (Claude Default)**
+- **Local Claude Default**: `claude`, `??` commands now use local execution by default
+- **Zero API Costs**: All Claude queries are free and private by default
+- **Local Gemini**: `gemini -p <query>` - Zero API costs, full privacy  
+- **Model Management**: Switch between models and execution modes
+- **Auto-fallback**: Seamless fallback from local to API when needed
+- **Backward Compatible**: All existing commands still work but now use local by default
 
 ### ✨ Unified Modern REPL Experience
 - **Interactive Commands Fixed!** - SSH, Docker, Git, yay with proper prompts
 - **Real-time Output** - See command output as it happens
-- **Smart Auto-completion** - Tab completion for commands and Python
+- **Smart Auto-completion** - Tab completion for commands, Python, and AI models
 - **Syntax Highlighting** - Beautiful code highlighting
 - **Command History** - Navigate with Up/Down arrows
 - **Background Processes** - Launch VSCode without blocking
@@ -63,7 +71,8 @@ Interactive commands including AUR helpers like `yay` now work perfectly with pr
 
 ### Prerequisites
 - Python 3.8+ (tested up to Python 3.13)
-- Anthropic API key
+- **For local execution**: `claude` and `gemini` commands installed (recommended)
+- **For API mode**: Anthropic API key (optional fallback)
 
 ### Quick Install
 
@@ -78,9 +87,18 @@ cd nexus-ai
 pip install -e .
 ```
 
-3. **Set up your Anthropic API key:**
+3. **Set up API key (optional for local mode):**
 ```bash
-export ANTHROPIC_API_KEY='your-api-key-here'
+export ANTHROPIC_API_KEY='your-api-key-here'  # Only needed for API fallback
+```
+
+4. **Install local AI commands (recommended):**
+```bash
+# Install Claude Code for local Claude execution
+curl -fsSL https://claude.ai/install.sh | sh
+
+# Install Gemini CLI for local Gemini execution  
+npm install -g @google-ai/generativelanguage
 ```
 
 ### Development Install
@@ -117,19 +135,68 @@ nexus --version          # Show version information
 
 ### Command Reference
 
+#### 🤖 AI Model Commands
 | Command | Description | Example |
 |---------|-------------|---------|
 | `> <code>` | Execute Python code | `> print("Hello World")` |
 | `! <command>` | Bash command (auto-detect mode) | `! ls -la` |
 | `!i <command>` | Force interactive bash | `!i ssh user@server` |
 | `!c <command>` | Force captured bash | `!c ps aux \| grep python` |
-| `?? <query>` | Ask Claude for help | `?? how do I list files recursively?` |
-| `claude <query>` | Alternative Claude syntax | `claude explain this error` |
+| `claude -p <query>` | **Local Claude** (no API costs) | `claude -p how do I list files recursively?` |
+| `gemini -p <query>` | **Local Gemini** (no API costs) | `gemini -p explain this Python code` |
+| `claude <query>` | **Local Claude** (default) | `claude explain this error` |
+| `gemini <query>` | Gemini via API | `gemini what is machine learning?` |
+| `?? <query>` | **Local Claude** (default) | `?? how do I debug this?` |
+| `model status` | Show model configuration | `model status` |
+| `model set <model>` | Set default model | `model set gemini` |
+| `model mode <mode>` | Set execution mode | `model mode local` |
+
+#### 💻 System Commands
+| Command | Description | Example |
+|---------|-------------|---------|
 | `task: <description>` | Start new task with Claude | `task: setup a web server` |
 | `help` | Show all commands | `help` |
 | `exit` or `quit` | Exit NEXUS | `exit` |
 
 ### Examples
+
+#### 0. **NEW: Multi-Model AI Commands**
+```bash
+# Local execution (no API costs, full privacy)
+🔮 claude -p What is the difference between lists and tuples in Python?
+Claude-Local response:
+Lists are mutable (changeable) while tuples are immutable (unchangeable).
+Lists use square brackets [], tuples use parentheses ().
+
+🔮 gemini -p How do I reverse a string in Python?
+Gemini-Local response:  
+You can reverse a string using slicing: my_string[::-1]
+
+# Model management
+🔮 model status
+Current Model Settings:
+  Default Model: claude
+  Default Mode: local
+
+Model Availability:
+  claude:
+    local: ✓
+    api: ✓
+  gemini:
+    local: ✓
+    api: ✗
+
+🔮 model set gemini        # Switch default to Gemini
+Default model set to: gemini
+
+🔮 model mode api          # Switch to API mode
+Default execution mode set to: api
+
+# Mixed usage - use different models for different tasks
+🔮 claude -p Debug this Python error: NameError
+🔮 gemini -p Explain machine learning in simple terms
+🔮 claude explain the git workflow    # API fallback
+```
 
 #### 1. Interactive Commands (Now Working!)
 ```bash
@@ -169,7 +236,7 @@ Choose packages to install (e.g. 1-3,5):
 ✓ Launched in background: firefox https://github.com
 ```
 
-#### 3. Python Development
+#### 3. AI-Assisted Python Development
 ```bash
 🔮 > import pandas as pd
 🔮 > df = pd.DataFrame({'name': ['Alice', 'Bob'], 'age': [25, 30]})
@@ -178,8 +245,8 @@ Choose packages to install (e.g. 1-3,5):
 0  Alice   25
 1    Bob   30
 
-🔮 ?? how do I save this dataframe to CSV?
-Claude's response:
+🔮 claude -p how do I save this dataframe to CSV?
+Claude-Local response:
 To save your DataFrame to a CSV file, use the `to_csv()` method:
 
 > df.to_csv('data.csv', index=False)
@@ -193,8 +260,8 @@ This will save your DataFrame to 'data.csv' without the row indices.
 PID   USER   %CPU %MEM    VSZ   RSS TTY   STAT START   TIME COMMAND
 1234  user    2.1  1.5  45000 15000 pts/1  S+   10:30   0:05 python nexus.py
 
-🔮 ?? analyze the process output above
-Claude's response:
+🔮 gemini -p analyze the process output above
+Gemini-Local response:
 Based on the process output, I can see:
 - Process ID: 1234
 - CPU usage: 2.1%
@@ -204,11 +271,27 @@ Based on the process output, I can see:
 ...
 ```
 
-#### 5. Development Workflow
+#### 5. Multi-Model Development Workflow
+```bash
+# Use different models for different strengths
+🔮 claude -p Create a Python function to validate email addresses
+Claude-Local response:
+[Detailed implementation with regex and validation logic]
+
+🔮 gemini -p Explain the email validation function above
+Gemini-Local response: 
+[Clear explanation of how the validation works]
+
+🔮 claude -p Write unit tests for this email validator
+Claude-Local response:
+[Comprehensive test cases with pytest]
+```
+
+#### 6. Original Development Workflow
 ```bash
 🔮 task: create a simple web API using FastAPI
 
-Claude's response:
+AI Assistant response (using default model):
 I'll help you create a simple FastAPI web API. Let me break this down into steps:
 
 1. First, let's install FastAPI and uvicorn:
@@ -261,12 +344,23 @@ NEXUS automatically detects command types:
 
 ### Environment Variables
 ```bash
-# Required
+# Optional (only needed for API fallback)
 export ANTHROPIC_API_KEY="your-api-key"
 
-# Optional
+# Optional customization
 export NEXUS_HISTORY_FILE="~/.nexus_history"  # Command history location
 export NEXUS_MAX_HISTORY="1000"               # Max history entries
+```
+
+### Model Configuration
+```bash
+# Interactive model setup
+nexus-ai
+🔮 model status           # Check current configuration
+🔮 model set claude       # Set default model
+🔮 model mode local       # Set default to local execution
+
+# Configuration is saved to ~/.nexus-ai/config.json
 ```
 
 ### Customization
@@ -280,6 +374,12 @@ The enhanced REPL supports:
 
 ### Common Issues
 
+**Q: "Model unavailable" errors**  
+A: Install local AI commands:
+- Claude: `curl -fsSL https://claude.ai/install.sh | sh`
+- Gemini: Check if `gemini` command is available
+- Fallback: Set `ANTHROPIC_API_KEY` for API mode
+
 **Q: Interactive commands like yay don't work properly**
 A: This has been fixed in v0.2.0! All interactive commands now work with proper terminal emulation.
 
@@ -287,14 +387,21 @@ A: This has been fixed in v0.2.0! All interactive commands now work with proper 
 A: Run `pip install -e .` from the project directory
 
 **Q: Claude API errors**
-A: Check your `ANTHROPIC_API_KEY` environment variable
+A: Use local mode with `claude -p` or check your `ANTHROPIC_API_KEY` environment variable
 
 **Q: Python commands not persisting**
 A: Variables persist within a session. Use `> globals()` to see current variables
 
+**Q: Which model should I use?**
+A: Both models work great locally! Try both and see which you prefer:
+- Claude: Generally excellent for coding and analysis
+- Gemini: Great for explanations and creative tasks
+
 ### Getting Help
-- Use `help` command in NEXUS
-- Check command with `?? explain command syntax`
+- Use `help` command in NEXUS to see all available commands
+- Check model status with `model status`
+- Test with `claude -p hello` or `gemini -p hello`
+- Check command with `claude -p explain command syntax`
 - Open GitHub issues for bugs
 - Use `!i` prefix for commands that need interaction
 
@@ -303,7 +410,14 @@ A: Variables persist within a session. Use `> globals()` to see current variable
 ### Architecture
 - **Core REPL**: `nexus_ai/repl/prompt_toolkit_repl.py` - Modern REPL with terminal emulation
 - **Executor**: `nexus_ai/core/executor.py` - PTY-based subprocess handling  
-- **Claude Client**: `nexus_ai/claude/client.py` - AI integration
+- **Model System**: `nexus_ai/models/` - Multi-model abstraction layer
+  - `base.py` - Model interface and enums
+  - `claude_local.py` - Local Claude execution
+  - `gemini_local.py` - Local Gemini execution
+  - `claude_api.py` - Claude API fallback
+  - `factory.py` - Model factory and switching
+- **Legacy Claude**: `nexus_ai/claude/client.py` - Backward compatibility
+- **Configuration**: `nexus_ai/utils/config.py` - Model preferences and settings
 - **Session**: `nexus_ai/core/session.py` - State management
 - **Main Entry**: `nexus_ai/main.py` - Unified command-line interface
 
@@ -312,6 +426,10 @@ A: Variables persist within a session. Use `> globals()` to see current variable
 # Run comprehensive tests
 python tests/test_nexus.py
 python tests/test_pty_fix.py
+python tests/test_new_features.py    # Multi-model tests
+
+# Test model functionality
+python demo_multi_model_upgrade.py   # Interactive demo
 
 # Test specific functionality
 python -c "
@@ -319,6 +437,12 @@ import asyncio
 from nexus_ai.repl.prompt_toolkit_repl import NexusPromptToolkitREPL
 repl = NexusPromptToolkitREPL()
 print('✓ NEXUS loads successfully')
+"
+
+# Test model availability
+python -c "
+from nexus_ai.models import model_factory
+print('Model availability:', model_factory.get_available_models())
 "
 ```
 
@@ -344,7 +468,16 @@ isort nexus_ai/
 pytest tests/
 ```
 
-## Recent Improvements (v0.2.0)
+## Recent Improvements (v0.3.0)
+
+### ✅ **NEW: Multi-Model Local Execution**
+- **Local Claude**: Execute `claude -p` commands without API costs
+- **Local Gemini**: Execute `gemini -p` commands without API costs
+- **Model Management**: `model status`, `model set`, `model mode` commands
+- **Auto-fallback**: Seamless fallback from local to API when needed
+- **Privacy**: All local execution, no data sent to external APIs
+- **Speed**: Faster responses with no network latency
+- **Configuration**: Model preferences saved to `~/.nexus-ai/config.json`
 
 ### ✅ Complete Interactive Command Fix
 - **Terminal emulation**: Proper PTY support for all interactive commands
@@ -353,19 +486,35 @@ pytest tests/
 - **Container interaction**: Docker containers with proper TTY allocation
 - **Editor integration**: Git commit, vim, nano launch correctly
 
-### ✅ Simplified Architecture  
+### ✅ Enhanced Architecture  
 - **Unified commands**: Both `nexus` and `nexus-ai` use the same modern interface
-- **Clean codebase**: Removed legacy cmd.Cmd implementation
-- **Better testing**: Comprehensive test suite for interactive features
-- **Enhanced UX**: Auto-completion, syntax highlighting, persistent history
+- **Model abstraction**: Clean separation between local and API execution
+- **Extensible design**: Easy to add new models and execution modes
+- **Backward compatibility**: All existing commands continue to work
+- **Better testing**: Comprehensive test suite for all features
+- **Enhanced UX**: Auto-completion for model commands, syntax highlighting, persistent history
 
 ## Dependencies
 
+### Core Dependencies
 - **Python 3.8+** (tested through 3.13)
-- **anthropic** - Claude AI API client
 - **prompt_toolkit** - Enhanced terminal interface
 - **pygments** - Syntax highlighting
 - **python-dotenv** - Environment variable loading
+
+### AI Model Dependencies
+- **anthropic** - Claude API client (for API fallback)
+- **claude** command - Local Claude execution (install via claude.ai)
+- **gemini** command - Local Gemini execution
+
+### Optional Dependencies
+```bash
+# For Gemini API support (future)
+pip install nexus-ai[gemini-api]
+
+# For all optional features
+pip install nexus-ai[all]
+```
 
 ## License
 

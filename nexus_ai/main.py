@@ -5,6 +5,7 @@ import argparse
 import sys
 from nexus_ai.core.session import Session
 from nexus_ai.repl.prompt_toolkit_repl import NexusPromptToolkitREPL
+from nexus_ai.models import ModelType, ExecutionMode
 
 
 def create_parser():
@@ -14,9 +15,13 @@ def create_parser():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  nexus-ai                    # Start NEXUS AI
-  nexus-ai --session-id test  # Start with specific session ID
-  nexus --help                # Show help (same as nexus-ai)
+  nexus-ai                         # Start with Claude local (default)
+  nexus-ai --model claude-local    # Start with Claude local execution
+  nexus-ai --model claude-api      # Start with Claude API
+  nexus-ai --model gemini-local    # Start with Gemini local execution
+  nexus-ai --model gemini-api      # Start with Gemini API
+  nexus-ai --session-id test       # Start with specific session ID
+  nexus --help                     # Show help (same as nexus-ai)
         """
     )
     
@@ -27,12 +32,35 @@ Examples:
     )
     
     parser.add_argument(
+        '--model', '-m',
+        type=str,
+        choices=['claude-local', 'claude-api', 'gemini-local', 'gemini-api'],
+        default='claude-local',
+        help='Default AI model to use (default: claude-local)'
+    )
+    
+    parser.add_argument(
         '--version', '-v',
         action='version',
-        version='NEXUS AI v0.2.0'
+        version='NEXUS AI v0.3.0'
     )
     
     return parser
+
+
+def parse_model_selection(model_str: str) -> tuple[ModelType, ExecutionMode]:
+    """Parse model string into ModelType and ExecutionMode"""
+    if model_str == 'claude-local':
+        return ModelType.CLAUDE, ExecutionMode.LOCAL
+    elif model_str == 'claude-api':
+        return ModelType.CLAUDE, ExecutionMode.API
+    elif model_str == 'gemini-local':
+        return ModelType.GEMINI, ExecutionMode.LOCAL
+    elif model_str == 'gemini-api':
+        return ModelType.GEMINI, ExecutionMode.API
+    else:
+        # Default fallback
+        return ModelType.CLAUDE, ExecutionMode.LOCAL
 
 
 def main():
@@ -41,9 +69,12 @@ def main():
     args = parser.parse_args()
     
     try:
+        # Parse model selection
+        model_type, execution_mode = parse_model_selection(args.model)
+        
         # Create session with optional session ID
         session = Session(args.session_id) if args.session_id else None
-        repl = NexusPromptToolkitREPL(session)
+        repl = NexusPromptToolkitREPL(session, default_model=model_type, default_mode=execution_mode)
         
         # Run the REPL
         asyncio.run(repl.run())
